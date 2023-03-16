@@ -1,3 +1,4 @@
 opencv_python==4.7.0.72
 protobuf==4.22.1
 pytesseract==0.3.10
+spacy==3.5.1
