@@ -1,35 +1,36 @@
 import pytesseract
 import cv2
 import json
+from PIL import Image
 from google.cloud import texttospeech
-# import spacy
-# nlp = spacy.load('en_core_web_sm')
-
-# with open('braided-horizon-380818-a343e93b3e20.json') as f:
-#     data = json.load(f)
-
-# print(data)
 
 ##intialize a connection to google cloud texttospeech client using json key
-img = cv2.imread('test.jpeg')
+img = cv2.imread('test.png')
+
+ocrText_noPreprocessing = pytesseract.image_to_string(img)
+print("OCR text without preprocessing: ", ocrText_noPreprocessing)
+
 # Convert the image to grayscale
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 # Apply thresholding to remove noise
 thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 
-# Apply Gaussian blur to smooth the image
-blur = cv2.GaussianBlur(thresh, (3, 3), 0)
+kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3))
+dilation = cv2.dilate(thresh, kernel, iterations=1)
+erosion = cv2.erode(dilation, kernel, iterations=1)
 
-# Apply Canny edge detection to extract edges
-edges = cv2.Canny(blur, 100, 200)
+# Convert OpenCV numpy array to PIL Image object
+pil_image = Image.fromarray(erosion)
+ocrText = pytesseract.image_to_string(pil_image)
 
-ocrText = pytesseract.image_to_string(edges)
+
+
+print("--------------------------------------------------")
+print("OCR text with preprocessing: ",ocrText)
 # doc = nlp(text2)
 # words = [token.text for token in doc if token.is_alpha]
-
 client = texttospeech.TextToSpeechClient.from_service_account_json('braided-horizon-380818-a343e93b3e20.json')
-
 # for i in range(0,len(words)):
 #     print(words[i])
 synthesis_input = texttospeech.SynthesisInput(text=ocrText)
